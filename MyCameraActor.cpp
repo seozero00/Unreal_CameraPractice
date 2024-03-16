@@ -1,7 +1,6 @@
 #include "MyCameraActor.h"
 #include "Engine/Console.h"
 
-// Sets default values
 AMyCameraActor::AMyCameraActor()
 {
     PrimaryActorTick.bCanEverTick = true;
