@@ -1,5 +1,14 @@
+// MyCameraActor.cpp
 #include "MyCameraActor.h"
 #include "Engine/Console.h"
+
+// 전역 변수 초기화
+float DeltaRoll = 0.0f;
+float DeltaPitch = 0.0f;
+float DeltaYaw = 0.0f;
+float DeltaX = 0.0f;
+float DeltaY = 0.0f;
+float DeltaZ = 0.0f;
 
 AMyCameraActor::AMyCameraActor()
 {
@@ -13,12 +22,13 @@ void AMyCameraActor::BeginPlay()
 {
     Super::BeginPlay();
 
-    FConsoleCommandWithArgsDelegate ConsoleCommandDelegate;
-    ConsoleCommandDelegate.BindUObject(this, &AMyCameraActor::AdjustCameraRotationConsoleCommand);
+    // 콘솔 명령어 처리를 위한 델리게이트 생성 및 AdjustCameraConsoleCommand 함수 바인딩
+    FConsoleCommandWithArgsDelegate CameraCommandDelegate;
+    CameraCommandDelegate.BindUObject(this, &AMyCameraActor::CameraConsoleCommand);
+
     IConsoleManager::Get().RegisterConsoleCommand(
-        TEXT("AdjustCamera"),
-        TEXT("Adjust camera rotation with provided roll, pitch, yaw values."),
-        ConsoleCommandDelegate
+        TEXT("Camera"),
+        CameraCommandDelegate
     );
 }
 
@@ -27,33 +37,37 @@ void AMyCameraActor::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
-FRotator AMyCameraActor::GetCameraRotation() const
+void AMyCameraActor::CameraConsoleCommand(const TArray<FString>& Args)
 {
-    return CameraComponent->GetComponentRotation();
-}
-
-void AMyCameraActor::AdjustCameraRotationConsoleCommand(const TArray<FString>& Args)
-{
-    if (Args.Num() != 3)
+    if (Args.Num() != 6)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Invalid input. Usage: AdjustCamera <DeltaRoll> <DeltaPitch> <DeltaYaw>"));
+        UE_LOG(LogTemp, Warning, TEXT("Camera <DeltaRoll> <DeltaPitch> <DeltaYaw> <DeltaX> <DeltaY> <DeltaZ>"));
         return;
     }
 
-    float DeltaRoll = FCString::Atof(*Args[0]);
-    float DeltaPitch = FCString::Atof(*Args[1]);
-    float DeltaYaw = FCString::Atof(*Args[2]);
+    DeltaRoll = FCString::Atof(*Args[0]) * 100;
+    DeltaPitch = FCString::Atof(*Args[1]) * 100;
+    DeltaYaw = FCString::Atof(*Args[2]) * 100;
+    DeltaX = FCString::Atof(*Args[3]) * 100;
+    DeltaY = FCString::Atof(*Args[4]) * 100;
+    DeltaZ = FCString::Atof(*Args[5]) * 100;
 
-    AdjustCameraRotation(DeltaRoll, DeltaPitch, DeltaYaw);
+    AdjustCamera();
 }
 
-void AMyCameraActor::AdjustCameraRotation(float DeltaRoll, float DeltaPitch, float DeltaYaw)
+void AMyCameraActor::AdjustCamera()
 {
     FRotator CurrentRotation = CameraComponent->GetComponentRotation();
+    FVector CurrentLocation = CameraComponent->GetComponentLocation();
 
     CurrentRotation.Roll += DeltaRoll;
     CurrentRotation.Pitch += DeltaPitch;
     CurrentRotation.Yaw += DeltaYaw;
 
+    CurrentLocation.X += DeltaX;
+    CurrentLocation.Y += DeltaY;
+    CurrentLocation.Z += DeltaZ;
+
     CameraComponent->SetWorldRotation(CurrentRotation);
+    CameraComponent->SetWorldLocation(CurrentLocation);
 }
